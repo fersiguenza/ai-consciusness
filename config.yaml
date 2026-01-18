@@ -1,0 +1,18 @@
+
+# Configuration for Consciousness AI POC
+# This configures both the CLI (main.py) and API (api/api_server.py)
+
+# LLM model name (used by Ollama or other LLM backends)
+model: "llama2"
+
+# Regret threshold for forgetting (lower = more aggressive pruning)
+regret_threshold: 7
+
+# How much regret decays per day (float)
+forgetting_decay: 1
+
+# Mood threshold for emotion/mood logic
+mood_threshold: 5
+
+# LLM API endpoint (Ollama or compatible)
+ollama_url: "http://localhost:11434/api/generate"

@@ -1,0 +1,25 @@
+services:
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama:/root/.ollama
+  #   restart: unless-stopped
+
+  app:
+    build: .
+    # depends_on:
+    #   - ollama
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./graphs:/app/graphs
+
+# volumes:
+#   ollama:

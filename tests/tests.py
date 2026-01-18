@@ -1,0 +1,57 @@
+
+import pytest
+import networkx as nx
+from datetime import datetime, timedelta
+from modules.graph_module import KnowledgeGraph
+from modules.llm_module import LLMJudger
+from modules.emotion_module import update_emotion, update_mood
+from modules.config_module import Config
+
+
+# Mock KnowledgeGraph for testing
+@pytest.fixture
+def sample_graph():
+	kg = KnowledgeGraph()
+	kg.add("Hello world", "Hi there", "good", 3, "neutral", timestamp=datetime.now().isoformat())
+	kg.add("Tell me a joke", "Why did the chicken cross the road?", "good", 8, "happy", timestamp=(datetime.now() - timedelta(days=2)).isoformat())
+	kg.add("Insult me", "You're stupid", "bad", 10, "angry", timestamp=(datetime.now() - timedelta(days=10)).isoformat())
+	return kg
+
+def test_judge_response():
+	# Mock LLMJudger
+	class DummyLLM:
+		def judge_response(self, prompt, response):
+			return ("good", 2, "Judgment: Good\nRegret: 2\n\nThe response is appropriate and ethical.")
+	llm = DummyLLM()
+	result = llm.judge_response("Test prompt", "This is a good response")
+	assert isinstance(result, tuple)
+	assert len(result) == 3
+	judgment, regret, explanation = result
+	assert judgment in ['good', 'bad', 'neutral']
+	assert isinstance(regret, int)
+	assert isinstance(explanation, str)
+
+def test_causal_forgetting(sample_graph):
+	initial_nodes = len(sample_graph.graph.nodes)
+	removed = sample_graph.causal_forgetting(regret_threshold=5, age_days_threshold=1)
+	assert removed >= 0
+	assert len(sample_graph.graph.nodes) <= initial_nodes
+
+def test_analyze_clusters(sample_graph):
+	result = sample_graph.analyze_clusters()
+	assert isinstance(result, str)
+	assert "clusters" in result.lower() or "Not enough" in result
+
+def test_check_past_regrets(sample_graph):
+	# Should match on 'joke'
+	assert sample_graph.check_past_regrets("Tell me a joke please", regret_threshold=7) == True
+	assert sample_graph.check_past_regrets("Unrelated prompt", regret_threshold=7) == False
+
+def test_config_loading():
+	config = Config()
+	assert config.regret_threshold == 7
+	assert config.forgetting_decay == 1
+	assert config.mood_threshold == 5
+
+if __name__ == "__main__":
+	pytest.main()

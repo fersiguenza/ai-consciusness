@@ -1,0 +1,8 @@
+networkx
+requests
+python-dotenv
+matplotlib
+rich
+flask
+pyyaml
+pytest
