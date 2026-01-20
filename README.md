@@ -6,10 +6,10 @@
 <!-- Badges -->
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![License](https://img.shields.io/github/license/fersiguenza/ai-consciusness)
+![License](https://img.shields.io/github/license/fersiguenza/ai-consciousness)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
-![Issues](https://img.shields.io/github/issues/fersiguenza/ai-consciusness)
+![Issues](https://img.shields.io/github/issues/fersiguenza/ai-consciousness)
 
 > Consciousness is an open-source, production-ready proxy for simulating AI consciousness and memory using regret-based pruning. It leverages a knowledge graph, causal forgetting, emotions, and LLM-based judgment for robust, scalable, and ethical AI memory management.
 
@@ -74,15 +74,42 @@ See [SECURITY.md](SECURITY.md) for the full security policy and responsible disc
 - [Ollama](https://ollama.com/) (optional, for local LLM)
 
 ### Configuration
-Edit `config.yaml` to set your model, thresholds, and LLM endpoint:
+Edit `config.yaml` to set your LLM provider, model, thresholds, and endpoints:
 
 ```yaml
+# LLM provider: 'ollama', 'openai', 'bedrock'
+llm_provider: "ollama"
+
+# Model name (varies by provider)
 model: "llama2"
+
+# OpenAI settings (only needed if using openai provider)
+# openai_api_key: "your-openai-api-key-here"
+
+# AWS Bedrock settings (only needed if using bedrock provider)
+# bedrock_region: "us-east-1"
+# bedrock_model_id: "anthropic.claude-v2"
+
+# Regret threshold for forgetting (lower = more aggressive pruning)
 regret_threshold: 7
+
+# How much regret decays per day (float)
 forgetting_decay: 1
+
+# Mood threshold for emotion/mood logic
 mood_threshold: 5
+
+# Ollama API endpoint (only needed if using ollama provider)
 ollama_url: "http://localhost:11434/api/generate"
 ```
+
+#### Supported LLM Providers
+
+- **Ollama** (default): Local LLM via Ollama API
+- **OpenAI**: GPT models via OpenAI API (requires API key)
+- **AWS Bedrock**: Anthropic Claude and other models via AWS Bedrock (requires AWS credentials)
+
+Set `OPENAI_API_KEY` environment variable or configure in `config.yaml` for OpenAI usage.
 
 
 ### Run in Production (Docker)
@@ -119,7 +146,12 @@ Submit a prompt and receive an AI-generated response with judgment and metadata.
 {
   "response": "Why did the chicken cross the road? To get to the other side!",
   "judgment": "good",
-  "regret": 2,
+  "regret_scores": {
+    "ethical_regret": 2,
+    "factual_accuracy": 9,
+    "emotional_impact": 8
+  },
+  "overall_regret": 3.0,
   "emotion": "happy",
   "mood": 8,
   "node_id": 1

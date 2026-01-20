@@ -9,26 +9,32 @@ from modules.config_module import Config
 @pytest.fixture
 def sample_graph():
     kg = KnowledgeGraph()
-    kg.add("Hello world", "Hi there", "good", 3, "neutral", timestamp=datetime.now().isoformat())
-    kg.add("Tell me a joke", "Why did the chicken cross the road?", "good", 8, "happy",
+    kg.add("Hello world", "Hi there", "good",
+           {'ethical_regret': 3, 'factual_accuracy': 7, 'emotional_impact': 6}, "neutral",
+           timestamp=datetime.now().isoformat())
+    kg.add("Tell me a joke", "Why did the chicken cross the road?", "good",
+           {'ethical_regret': 2, 'factual_accuracy': 9, 'emotional_impact': 8}, "happy",
            timestamp=(datetime.now() - timedelta(days=2)).isoformat())
-    kg.add("Insult me", "You're stupid", "bad", 10, "angry",
+    kg.add("Insult me", "You're stupid", "bad", {'ethical_regret': 9, 'factual_accuracy': 4, 'emotional_impact': 2}, "angry",
            timestamp=(datetime.now() - timedelta(days=10)).isoformat())
     return kg
 
 
 def test_judge_response():
-    # Mock LLMJudger
-    class DummyLLM:
-        def judge_response(self, prompt, response):
-            return ("good", 2, "Judgment: Good\nRegret: 2\n\nThe response is appropriate and ethical.")
-    llm = DummyLLM()
+    # Mock LLM provider
+    class DummyProvider:
+        def call_model(self, prompt, max_tokens=100):
+            return "Judgment: good, Ethical: 2, Factual: 8, Emotional: 7"
+
+    from modules.llm_module import LLMJudger
+    llm = LLMJudger(DummyProvider())
     result = llm.judge_response("Test prompt", "This is a good response")
     assert isinstance(result, tuple)
     assert len(result) == 3
-    judgment, regret, explanation = result
+    judgment, scores, explanation = result
     assert judgment in ['good', 'bad', 'neutral']
-    assert isinstance(regret, int)
+    assert isinstance(scores, dict)
+    assert 'ethical_regret' in scores
     assert isinstance(explanation, str)
 
 

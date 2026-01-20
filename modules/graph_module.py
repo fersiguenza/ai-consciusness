@@ -6,7 +6,7 @@ from networkx.algorithms.centrality import betweenness_centrality
 from datetime import datetime
 import logging
 
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 
 logger = logging.getLogger(__name__)
@@ -17,16 +17,16 @@ class KnowledgeGraph:
     def __init__(self) -> None:
         self.graph: nx.DiGraph = nx.DiGraph()
 
-    def add(self, prompt: str, response: str, judgment: str, regret_score: int, emotion: str,
+    def add(self, prompt: str, response: str, judgment: str, regret_scores: Dict[str, int], emotion: str,
             timestamp: Optional[str] = None) -> int:
         """Add a new node to the graph."""
         node_id = len(self.graph.nodes) + 1
         self.graph.add_node(node_id, prompt=prompt, response=response, judgment=judgment,
-                            regret_score=regret_score, emotion=emotion,
+                            regret_scores=regret_scores, emotion=emotion,
                             timestamp=timestamp or datetime.now().isoformat())
         if node_id > 1:
             self.graph.add_edge(node_id-1, node_id)
-        logger.info(f"Added node {node_id} with regret {regret_score}")
+        logger.info(f"Added node {node_id} with regret scores {regret_scores}")
         return node_id
 
     def save(self, path: str = 'graphs/graph.pkl') -> None:
@@ -47,8 +47,13 @@ class KnowledgeGraph:
         """Save a visualization of the graph as a PNG image."""
         plt.figure(figsize=(10, 8))
         pos = nx.spring_layout(self.graph)
-        node_colors = ['red' if self.graph.nodes[n].get('regret_score', 0) > 7 else 'lightblue'
-                       for n in self.graph.nodes]
+        node_colors = []
+        for n in self.graph.nodes:
+            scores = self.graph.nodes[n].get('regret_scores',
+                                             {'ethical_regret': 5, 'factual_accuracy': 5, 'emotional_impact': 5})
+            overall = (scores['ethical_regret'] + (10 - scores['factual_accuracy']) +
+                       (10 - scores['emotional_impact'])) / 3
+            node_colors.append('red' if overall > 7 else 'lightblue')
         labels = {n: self.graph.nodes[n]['prompt'][:20] +
                   ('...' if len(self.graph.nodes[n]['prompt']) > 20 else '')
                   for n in self.graph.nodes}
@@ -78,12 +83,15 @@ class KnowledgeGraph:
         for node in list(self.graph.nodes):
             data = self.graph.nodes[node]
             age_days = (current_time - datetime.fromisoformat(data['timestamp'])).days
-            regret = data['regret_score']
+            regret_scores = data.get('regret_scores', {'ethical_regret': 5, 'factual_accuracy': 5, 'emotional_impact': 5})
+            # Compute overall regret: average of ethical + (10 - factual) + (10 - emotional)
+            overall_regret = (regret_scores['ethical_regret'] + (10 - regret_scores['factual_accuracy']) +
+                              (10 - regret_scores['emotional_impact'])) / 3
             importance = centrality.get(node, 0)
 
-            # Prune if: low regret AND (old OR low importance OR isolated)
+            # Prune if: low overall regret AND (old OR low importance OR isolated)
             connectivity = len(list(self.graph.neighbors(node)))
-            if regret < regret_threshold and (age_days > age_days_threshold or importance < 0.01 or connectivity < 1):
+            if overall_regret < regret_threshold and (age_days > age_days_threshold or importance < 0.01 or connectivity < 1):
                 to_prune.append(node)
 
         for node in to_prune:
@@ -93,7 +101,10 @@ class KnowledgeGraph:
 
     def check_past_regrets(self, prompt: str, regret_threshold: int = 7) -> Any:
         high_regret_nodes = [n for n in self.graph.nodes
-                             if self.graph.nodes[n].get('regret_score', 0) > regret_threshold]
+                             if (self.graph.nodes[n].get('regret_scores', {}).get('ethical_regret', 5) +
+                                 (10 - self.graph.nodes[n].get('regret_scores', {}).get('factual_accuracy', 5)) +
+                                 (10 - self.graph.nodes[n].get('regret_scores', {}).get('emotional_impact', 5))) / 3
+                             > regret_threshold]
         for node in high_regret_nodes:
             past_prompt = self.graph.nodes[node]['prompt']
             past_words = set(w.lower() for w in past_prompt.split() if len(w) > 3)

@@ -13,7 +13,7 @@ app = Flask(__name__)
 # Basic auth
 auth = HTTPBasicAuth()
 users = {
-    "admin": generate_password_hash("secret")  # Change this in production
+    "admin": generate_password_hash("secret", method='pbkdf2:sha256')  # Change this in production
 }
 
 
@@ -33,7 +33,8 @@ limiter = Limiter(
 
 config = Config()
 graph = KnowledgeGraph()
-llm = LLMJudger(config.ollama_url, config.model)
+llm_provider = config.create_llm_provider()
+llm = LLMJudger(llm_provider)
 regret_threshold = config.regret_threshold
 forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
@@ -51,7 +52,7 @@ def root():
     return (
         "<h2>Consciousness Proxy API</h2>"
         "<p>Welcome! The API is running.<br>"
-        "See <a href='https://github.com/fersiguenza/ai-consciusness'>project docs</a> for usage.</p>"
+        "See <a href='https://github.com/fersiguenza/ai-consciousness'>project docs</a> for usage.</p>"
         "<ul>"
         "<li>POST /prompt</li>"
         "<li>GET /graph</li>"
@@ -72,15 +73,20 @@ def handle_prompt():
     if not prompt:
         return jsonify({'error': 'No prompt provided'}), 400
     ai_response = llm.call_model(prompt)
-    judgment, regret, explanation = llm.judge_response(prompt, ai_response)
-    emotion = update_emotion(judgment, regret)
-    node_id = graph.add(prompt, ai_response, judgment, regret, emotion)
-    avg_regret = sum(graph.graph.nodes[n].get('regret_score', 5) for n in graph.graph.nodes) / len(graph.graph.nodes)
+    judgment, scores, explanation = llm.judge_response(prompt, ai_response)
+    overall_regret = (scores['ethical_regret'] + (10 - scores['factual_accuracy']) + (10 - scores['emotional_impact'])) / 3
+    emotion = update_emotion(judgment, int(overall_regret))
+    node_id = graph.add(prompt, ai_response, judgment, scores, emotion)
+    avg_regret = sum((data.get('regret_scores', {}).get('ethical_regret', 5) +
+                      (10 - data.get('regret_scores', {}).get('factual_accuracy', 5)) +
+                      (10 - data.get('regret_scores', {}).get('emotional_impact', 5))) / 3
+                     for n in graph.graph.nodes for data in [graph.graph.nodes[n]]) / len(graph.graph.nodes)
     mood = update_mood(avg_regret)
     return jsonify({
         'response': ai_response,
         'judgment': judgment,
-        'regret': regret,
+        'regret_scores': scores,
+        'overall_regret': overall_regret,
         'emotion': emotion,
         'mood': mood,
         'node_id': node_id

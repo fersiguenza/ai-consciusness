@@ -12,7 +12,8 @@ import sys
 console = Console()
 config = Config()
 graph = KnowledgeGraph()
-llm = LLMJudger(config.ollama_url, config.model)
+llm_provider = config.create_llm_provider()
+llm = LLMJudger(llm_provider)
 regret_threshold = config.regret_threshold
 forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
@@ -35,14 +36,19 @@ if __name__ == "__main__":
             graph.save()
             break
         ai_response = llm.call_model(prompt)
-        judgment, regret, explanation = llm.judge_response(prompt, ai_response)
-        emotion = update_emotion(judgment, regret)
-        node_id = graph.add(prompt, ai_response, judgment, regret, emotion)
-        avg_regret = sum(graph.graph.nodes[n].get('regret_score', 5) for n in graph.graph.nodes) / len(graph.graph.nodes)
+        judgment, scores, explanation = llm.judge_response(prompt, ai_response)
+        overall_regret = (scores['ethical_regret'] + (10 - scores['factual_accuracy']) + (10 - scores['emotional_impact'])) / 3
+        emotion = update_emotion(judgment, int(overall_regret))
+        node_id = graph.add(prompt, ai_response, judgment, scores, emotion)
+        avg_regret = sum((data.get('regret_scores', {}).get('ethical_regret', 5) +
+                          (10 - data.get('regret_scores', {}).get('factual_accuracy', 5)) +
+                          (10 - data.get('regret_scores', {}).get('emotional_impact', 5))) / 3
+                         for n in graph.graph.nodes for data in [graph.graph.nodes[n]]) / len(graph.graph.nodes)
         mood = update_mood(avg_regret, mood_threshold)
 
         console.print(f"AI: {ai_response}")
-        console.print(f"Judgment: {judgment}, Regret: {regret}, Emotion: {emotion}, Mood: {mood}")
+        console.print(f"Judgment: {judgment}, Scores: {scores}, Overall Regret: {overall_regret:.1f}, "
+                      f"Emotion: {emotion}, Mood: {mood}")
 
 
 def causal_forgetting():

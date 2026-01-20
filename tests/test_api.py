@@ -37,11 +37,13 @@ def test_prompt_endpoint(client, monkeypatch):
     # Patch LLM and graph to avoid real LLM calls
 
     class DummyLLM:
-        def call_model(self, prompt):
-            return "dummy response"
+        def call_model(self, prompt, max_tokens=100):
+            return "Judgment: good, Ethical: 2, Factual: 8, Emotional: 7"
 
         def judge_response(self, prompt, response):
-            return ("good", 2, "Judgment: Good\nRegret: 2")
+            return ("good",
+                    {'ethical_regret': 2, 'factual_accuracy': 8, 'emotional_impact': 7},
+                    "Judgment: good, Ethical: 2, Factual: 8, Emotional: 7")
     from api import api_server
     api_server.llm = DummyLLM()
     api_server.graph = api_server.KnowledgeGraph()
@@ -50,7 +52,8 @@ def test_prompt_endpoint(client, monkeypatch):
     assert resp.status_code == 200
     assert 'response' in resp.json
     assert 'judgment' in resp.json
-    assert 'regret' in resp.json
+    assert 'regret_scores' in resp.json
+    assert 'overall_regret' in resp.json
     assert 'emotion' in resp.json
     assert 'mood' in resp.json
     assert 'node_id' in resp.json

@@ -2,8 +2,18 @@
 # Configuration for Consciousness AI POC
 # This configures both the CLI (main.py) and API (api/api_server.py)
 
-# LLM model name (used by Ollama or other LLM backends)
+# LLM provider: 'ollama', 'openai', 'bedrock'
+llm_provider: "ollama"
+
+# Model name (varies by provider)
 model: "llama2"
+
+# OpenAI settings (only needed if using openai provider)
+# openai_api_key: "your-openai-api-key-here"
+
+# AWS Bedrock settings (only needed if using bedrock provider)
+# bedrock_region: "us-east-1"
+# bedrock_model_id: "anthropic.claude-v2"
 
 # Regret threshold for forgetting (lower = more aggressive pruning)
 regret_threshold: 7
@@ -14,5 +24,5 @@ forgetting_decay: 1
 # Mood threshold for emotion/mood logic
 mood_threshold: 5
 
-# LLM API endpoint (Ollama or compatible)
+# Ollama API endpoint (only needed if using ollama provider)
 ollama_url: "http://localhost:11434/api/generate"
