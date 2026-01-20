@@ -1,12 +1,11 @@
 import pytest
+from fastapi.testclient import TestClient
 from api.api_server import app
 
 
 @pytest.fixture
 def client():
-    app.config['TESTING'] = True
-    with app.test_client() as client:
-        yield client
+    return TestClient(app)
 
 
 def test_get_config(client):
@@ -37,13 +36,14 @@ def test_prompt_endpoint(client, monkeypatch):
     # Patch LLM and graph to avoid real LLM calls
 
     class DummyLLM:
-        def call_model(self, prompt, max_tokens=100):
-            return "Judgment: good, Ethical: 2, Factual: 8, Emotional: 7"
+        async def call_model_async(self, prompt, max_tokens=100):
+            return "Test response"
 
-        def judge_response(self, prompt, response):
+        async def judge_response_async(self, prompt, response):
             return ("good",
                     {'ethical_regret': 2, 'factual_accuracy': 8, 'emotional_impact': 7},
                     "Judgment: good, Ethical: 2, Factual: 8, Emotional: 7")
+
     from api import api_server
     api_server.llm = DummyLLM()
     api_server.graph = api_server.KnowledgeGraph()

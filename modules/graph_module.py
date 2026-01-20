@@ -58,7 +58,7 @@ class KnowledgeGraph:
                   ('...' if len(self.graph.nodes[n]['prompt']) > 20 else '')
                   for n in self.graph.nodes}
         nx.draw(self.graph, pos, labels=labels, node_color=node_colors, font_size=8, node_size=500)
-        plt.title("Consciousness Knowledge Graph (Red: High Regret)")
+        plt.title("RegretGraph Knowledge Graph (Red: High Regret)")
         plt.savefig(out_path)
 
     def analyze_clusters(self) -> Any:

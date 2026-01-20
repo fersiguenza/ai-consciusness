@@ -28,7 +28,7 @@ def signal_handler(sig, frame):
 # Example CLI entrypoint
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
-    console.print("🧠 Consciousness AI POC (Modular) 🧠", style="bold magenta", justify="center")
+    console.print("🧠 RegretGraph AI POC (Modular) 🧠", style="bold magenta", justify="center")
 
     while True:
         prompt = input("Enter prompt (or 'exit'): ")
@@ -113,6 +113,6 @@ def visualize_graph():
               ('...' if len(graph.graph.nodes[n]['prompt']) > 20 else '')
               for n in graph.graph.nodes}
     nx.draw(graph.graph, pos, labels=labels, node_color=node_colors, font_size=8, node_size=500)
-    plt.title("Consciousness Knowledge Graph (Red: High Regret)")
+    plt.title("RegretGraph Knowledge Graph (Red: High Regret)")
     plt.savefig('graphs/graph.png')
     console.print("Graph visualization saved as graphs/graph.png", style="green")

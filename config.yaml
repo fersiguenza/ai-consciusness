@@ -1,5 +1,5 @@
 
-# Configuration for Consciousness AI POC
+# Configuration for RegretGraph AI POC
 # This configures both the CLI (main.py) and API (api/api_server.py)
 
 # LLM provider: 'ollama', 'openai', 'bedrock'

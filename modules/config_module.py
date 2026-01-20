@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 
 class Config:
-    """Configuration loader for the consciousness proxy."""
+    """Configuration loader for the RegretGraph system."""
     def __init__(self, path: str = 'config.yaml') -> None:
         with open(path, 'r') as f:
             self.config = yaml.safe_load(f)
@@ -47,7 +47,7 @@ class Config:
 
     @property
     def ollama_url(self) -> str:
-        return self.get('ollama_url', 'http://localhost:11434/api/generate')
+        return os.getenv('OLLAMA_URL') or self.get('ollama_url', 'http://localhost:11434/api/generate')
 
     def create_llm_provider(self):
         """Create and return the appropriate LLM provider based on configuration."""

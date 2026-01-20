@@ -1,6 +1,6 @@
-# Contributing to Consciousness
+# Contributing to RegretGraph
 
-Thank you for your interest in contributing to Consciousness, the AI consciousness proxy via regret pruning!
+Thank you for your interest in contributing to RegretGraph, the self-refining cognitive memory system via regret pruning!
 
 ## Code of Conduct
 
