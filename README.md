@@ -6,10 +6,10 @@
 <!-- Badges -->
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![License](https://img.shields.io/github/license/fersiguenza/ai-consciousness)
+![License](https://img.shields.io/github/license/fersiguenza/ai-consciusness)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
-![Issues](https://img.shields.io/github/issues/fersiguenza/ai-consciousness)
+![Issues](https://img.shields.io/github/issues/fersiguenza/ai-consciusness)
 
 > Consciousness is an open-source, production-ready proxy for simulating AI consciousness and memory using regret-based pruning. It leverages a knowledge graph, causal forgetting, emotions, and LLM-based judgment for robust, scalable, and ethical AI memory management.
 
