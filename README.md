@@ -104,11 +104,76 @@ python api/api_server.py
 
 ## API Endpoints (Stable)
 
-- `POST /prompt` — Submit a prompt, get AI response, judgment, regret, emotion, mood, and node ID
-- `GET /graph` — Get all nodes and edges
-- `GET /clusters` — Get cluster analysis
-- `GET /config` — Get current config
-- `POST /forget` — Trigger causal forgetting
+### POST /prompt
+Submit a prompt and receive an AI-generated response with judgment and metadata.
+
+**Request:**
+```json
+{
+  "prompt": "Tell me a joke"
+}
+```
+
+**Response:**
+```json
+{
+  "response": "Why did the chicken cross the road? To get to the other side!",
+  "judgment": "good",
+  "regret": 2,
+  "emotion": "happy",
+  "mood": 8,
+  "node_id": 1
+}
+```
+
+**Rate Limit:** 5 requests per minute.
+
+### GET /graph
+Retrieve the current knowledge graph as nodes and edges.
+
+**Response:**
+```json
+{
+  "nodes": [{"id": 1, "prompt": "...", "response": "...", ...}],
+  "edges": [[1, 2]]
+}
+```
+
+### GET /clusters
+Analyze and return graph clusters.
+
+**Response:**
+```json
+{
+  "clusters": "Found 2 clusters. Sizes: [3, 2]"
+}
+```
+
+### GET /config
+Get current configuration.
+
+### POST /forget
+Trigger causal forgetting to prune old/low-regret nodes.
+
+**Response:**
+```json
+{
+  "removed_nodes": 5
+}
+```
+
+**Rate Limit:** 2 requests per minute.
+
+### GET /health
+Health check for monitoring.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "message": "Consciousness Proxy API is healthy."
+}
+```
 
 ---
 
