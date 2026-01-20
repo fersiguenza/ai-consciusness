@@ -52,7 +52,7 @@ def root():
     return (
         "<h2>Consciousness Proxy API</h2>"
         "<p>Welcome! The API is running.<br>"
-        "See <a href='https://github.com/fersiguenza/ai-consciousness'>project docs</a> for usage.</p>"
+        "See <a href='https://github.com/fersiguenza/ai-consciusness'>project docs</a> for usage.</p>"
         "<ul>"
         "<li>POST /prompt</li>"
         "<li>GET /graph</li>"

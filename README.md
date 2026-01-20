@@ -33,7 +33,7 @@
 ## Directory Structure
 
 ```
-ai-consciousness/
+ai-consciusness/
 ├── main.py                # CLI entrypoint
 ├── config.yaml            # Config file (model, thresholds, etc.)
 ├── requirements.txt       # Python dependencies
