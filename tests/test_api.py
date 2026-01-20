@@ -10,25 +10,25 @@ def client():
 
 
 def test_get_config(client):
-    resp = client.get('/config')
+    resp = client.get('/v1/config')
     assert resp.status_code == 200
     assert 'regret_threshold' in resp.json
 
 
 def test_get_graph(client):
-    resp = client.get('/graph')
+    resp = client.get('/v1/graph')
     assert resp.status_code == 200
     assert 'nodes' in resp.json and 'edges' in resp.json
 
 
 def test_get_clusters(client):
-    resp = client.get('/clusters')
+    resp = client.get('/v1/clusters')
     assert resp.status_code == 200
     assert 'clusters' in resp.json
 
 
 def test_forget(client):
-    resp = client.post('/forget')
+    resp = client.post('/v1/forget', headers={'Authorization': 'Basic YWRtaW46c2VjcmV0'})
     assert resp.status_code == 200
     assert 'removed_nodes' in resp.json
 
@@ -46,7 +46,7 @@ def test_prompt_endpoint(client, monkeypatch):
     api_server.llm = DummyLLM()
     api_server.graph = api_server.KnowledgeGraph()
     data = {"prompt": "Hello"}
-    resp = client.post('/prompt', json=data)
+    resp = client.post('/v1/prompt', json=data, headers={'Authorization': 'Basic YWRtaW46c2VjcmV0'})  # admin:secret
     assert resp.status_code == 200
     assert 'response' in resp.json
     assert 'judgment' in resp.json

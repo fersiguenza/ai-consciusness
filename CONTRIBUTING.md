@@ -1,6 +1,6 @@
-# Contributing to Remorse
+# Contributing to Consciousness
 
-Thank you for your interest in contributing to Remorse, the AI consciousness proxy via regret pruning!
+Thank you for your interest in contributing to Consciousness, the AI consciousness proxy via regret pruning!
 
 ## Code of Conduct
 

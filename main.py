@@ -6,6 +6,8 @@ from modules.config_module import Config
 from rich.console import Console
 import matplotlib.pyplot as plt
 import networkx as nx
+import signal
+import sys
 
 console = Console()
 config = Config()
@@ -16,8 +18,15 @@ forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
 
 
+def signal_handler(sig, frame):
+    console.print("\nSaving graph and exiting...", style="yellow")
+    graph.save()
+    sys.exit(0)
+
+
 # Example CLI entrypoint
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
     console.print("🧠 Consciousness AI POC (Modular) 🧠", style="bold magenta", justify="center")
 
     while True:

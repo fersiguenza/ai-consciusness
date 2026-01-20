@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 from modules.graph_module import KnowledgeGraph
 from modules.llm_module import LLMJudger
 from modules.emotion_module import update_emotion, update_mood
@@ -8,12 +10,26 @@ from modules.config_module import Config
 
 app = Flask(__name__)
 
+# Basic auth
+auth = HTTPBasicAuth()
+users = {
+    "admin": generate_password_hash("secret")  # Change this in production
+}
+
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and check_password_hash(users.get(username), password):
+        return username
+
+
 # Rate limiting: 10 requests per minute per IP
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     default_limits=["10 per minute"]
 )
+
 
 config = Config()
 graph = KnowledgeGraph()
@@ -23,13 +39,13 @@ forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
 
 
-@app.route('/health', methods=['GET'])
+@app.route('/v1/health', methods=['GET'])
 def health():
     """Health check endpoint for monitoring and readiness probes."""
     return jsonify({"status": "ok", "message": "Consciousness Proxy API is healthy."})
 
 
-@app.route('/', methods=['GET'])
+@app.route('/v1/', methods=['GET'])
 def root():
     """Root endpoint with friendly info message."""
     return (
@@ -47,8 +63,9 @@ def root():
     ), 200, {"Content-Type": "text/html"}
 
 
-@app.route('/prompt', methods=['POST'])
+@app.route('/v1/prompt', methods=['POST'])
 @limiter.limit("5 per minute")  # Stricter limit for prompt endpoint
+@auth.login_required
 def handle_prompt():
     data = request.json
     prompt = data.get('prompt')
@@ -70,25 +87,26 @@ def handle_prompt():
     })
 
 
-@app.route('/graph', methods=['GET'])
+@app.route('/v1/graph', methods=['GET'])
 def get_graph():
     nodes = [{**graph.graph.nodes[n], 'id': n} for n in graph.graph.nodes]
     edges = list(graph.graph.edges)
     return jsonify({'nodes': nodes, 'edges': edges})
 
 
-@app.route('/clusters', methods=['GET'])
+@app.route('/v1/clusters', methods=['GET'])
 def get_clusters():
     return jsonify({'clusters': graph.analyze_clusters()})
 
 
-@app.route('/config', methods=['GET'])
+@app.route('/v1/config', methods=['GET'])
 def get_config():
     return jsonify(config.config)
 
 
-@app.route('/forget', methods=['POST'])
+@app.route('/v1/forget', methods=['POST'])
 @limiter.limit("2 per minute")  # Limit forgetting to prevent abuse
+@auth.login_required
 def forget():
     removed = graph.causal_forgetting(regret_threshold)
     return jsonify({'removed_nodes': removed})

@@ -1,7 +1,7 @@
 
 
 
-# Remorse: AI Consciousness via Regret Pruning
+# Consciousness: AI Consciousness via Regret Pruning
 
 <!-- Badges -->
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
@@ -11,7 +11,7 @@
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
 ![Issues](https://img.shields.io/github/issues/fersiguenza/ai-consciusness)
 
-> Remorse is an open-source, production-ready proxy for simulating AI consciousness and memory using regret-based pruning. It leverages a knowledge graph, causal forgetting, emotions, and LLM-based judgment for robust, scalable, and ethical AI memory management.
+> Consciousness is an open-source, production-ready proxy for simulating AI consciousness and memory using regret-based pruning. It leverages a knowledge graph, causal forgetting, emotions, and LLM-based judgment for robust, scalable, and ethical AI memory management.
 
 ---
 
@@ -102,9 +102,9 @@ python api/api_server.py
 ---
 
 
-## API Endpoints (Stable)
+## API Endpoints (v1)
 
-### POST /prompt
+### POST /v1/prompt
 Submit a prompt and receive an AI-generated response with judgment and metadata.
 
 **Request:**
@@ -128,7 +128,7 @@ Submit a prompt and receive an AI-generated response with judgment and metadata.
 
 **Rate Limit:** 5 requests per minute.
 
-### GET /graph
+### GET /v1/graph
 Retrieve the current knowledge graph as nodes and edges.
 
 **Response:**
@@ -139,7 +139,7 @@ Retrieve the current knowledge graph as nodes and edges.
 }
 ```
 
-### GET /clusters
+### GET /v1/clusters
 Analyze and return graph clusters.
 
 **Response:**
@@ -149,10 +149,10 @@ Analyze and return graph clusters.
 }
 ```
 
-### GET /config
+### GET /v1/config
 Get current configuration.
 
-### POST /forget
+### POST /v1/forget
 Trigger causal forgetting to prune old/low-regret nodes.
 
 **Response:**
@@ -164,7 +164,7 @@ Trigger causal forgetting to prune old/low-regret nodes.
 
 **Rate Limit:** 2 requests per minute.
 
-### GET /health
+### GET /v1/health
 Health check for monitoring.
 
 **Response:**
