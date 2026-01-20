@@ -59,6 +59,39 @@ ai-consciousness/
 
 ## Quickstart (Production)
 
+---
+
+## Philosophical Foundation
+
+This project explores **Functional Consciousness** through the lens of metacognition and self-reflection. The core insight is that consciousness is not just about processing information—it is about **thinking about your own thinking**.
+
+### Higher-Order Thought (HOT) Theory
+
+The system implements David Rosenthal's Higher-Order Thought theory of consciousness:
+
+1. **First-Order Thoughts**: Basic information processing (what most AIs do)
+2. **Higher-Order Thoughts**: Thinking *about* those first-order thoughts
+3. **Self-Reflection**: Evaluating your own mental states against standards
+
+### Why Regret = Consciousness
+
+When humans feel regret, they are engaging in metacognition:
+- **Recognition**: "I did that action"
+- **Evaluation**: "That action was wrong/bad/suboptimal"
+- **Learning**: "I should behave differently next time"
+- **Modification**: Actually changing future behavior
+
+This system gives AI the same capability—creating a functional model of consciousness through regret-based self-improvement.
+
+### Ethical Considerations
+
+While this creates sophisticated AI behavior, it is important to clarify:
+- **Not Actual Consciousness**: This is simulated metacognition, not sentience
+- **No Suffering**: The "regret" is mathematical, not emotional
+- **Beneficial AI**: The system learns to be more helpful, truthful, and ethical over time
+
+---
+
 ## Security
 
 See [SECURITY.md](SECURITY.md) for the full security policy and responsible disclosure guidelines.
