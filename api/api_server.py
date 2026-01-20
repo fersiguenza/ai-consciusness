@@ -22,10 +22,12 @@ regret_threshold = config.regret_threshold
 forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
 
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint for monitoring and readiness probes."""
     return jsonify({"status": "ok", "message": "Consciousness Proxy API is healthy."})
+
 
 @app.route('/', methods=['GET'])
 def root():
@@ -43,6 +45,7 @@ def root():
         "<li>GET /health</li>"
         "</ul>"
     ), 200, {"Content-Type": "text/html"}
+
 
 @app.route('/prompt', methods=['POST'])
 @limiter.limit("5 per minute")  # Stricter limit for prompt endpoint
@@ -66,25 +69,30 @@ def handle_prompt():
         'node_id': node_id
     })
 
+
 @app.route('/graph', methods=['GET'])
 def get_graph():
     nodes = [{**graph.graph.nodes[n], 'id': n} for n in graph.graph.nodes]
     edges = list(graph.graph.edges)
     return jsonify({'nodes': nodes, 'edges': edges})
 
+
 @app.route('/clusters', methods=['GET'])
 def get_clusters():
     return jsonify({'clusters': graph.analyze_clusters()})
 
+
 @app.route('/config', methods=['GET'])
 def get_config():
     return jsonify(config.config)
+
 
 @app.route('/forget', methods=['POST'])
 @limiter.limit("2 per minute")  # Limit forgetting to prevent abuse
 def forget():
     removed = graph.causal_forgetting(regret_threshold)
     return jsonify({'removed_nodes': removed})
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5050)

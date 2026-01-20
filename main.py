@@ -4,6 +4,8 @@ from modules.llm_module import LLMJudger
 from modules.emotion_module import update_emotion, update_mood
 from modules.config_module import Config
 from rich.console import Console
+import matplotlib.pyplot as plt
+import networkx as nx
 
 console = Console()
 config = Config()
@@ -12,6 +14,7 @@ llm = LLMJudger(config.ollama_url, config.model)
 regret_threshold = config.regret_threshold
 forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
+
 
 # Example CLI entrypoint
 if __name__ == "__main__":
@@ -55,6 +58,7 @@ def causal_forgetting():
     if to_decay or to_prune:
         console.print(f"Decayed {len(to_decay)} nodes, pruned {len(to_prune)}.", style="dim")
 
+
 def analyze_clusters():
     """Analyze graph clusters using modularity communities."""
     from networkx.algorithms.community import greedy_modularity_communities
@@ -66,16 +70,17 @@ def analyze_clusters():
     # Describe clusters
     descriptions = []
     for i, comm in enumerate(communities):
-        regrets = [graph.nodes[n].get('regret_score', 5) for n in comm]
+        regrets = [graph.graph.nodes[n].get('regret_score', 5) for n in comm]
         avg_regret = sum(regrets) / len(regrets) if regrets else 0
         descriptions.append(f"Cluster {i+1}: {len(comm)} nodes, avg regret {avg_regret:.1f}")
     return f"Clusters: {num_clusters} | Sizes: {cluster_sizes} | Details: {' | '.join(descriptions)}"
 
+
 def check_past_regrets(prompt):
     """Check if prompt resembles high-regret past interactions."""
-    high_regret_nodes = [n for n in graph.nodes if graph.nodes[n].get('regret_score', 0) > REGRET_THRESHOLD]
+    high_regret_nodes = [n for n in graph.graph.nodes if graph.graph.nodes[n].get('regret_score', 0) > regret_threshold]
     for node in high_regret_nodes:
-        past_prompt = graph.nodes[node]['prompt']
+        past_prompt = graph.graph.nodes[node]['prompt']
         # Simple keyword overlap check
         past_words = set(w.lower() for w in past_prompt.split() if len(w) > 3)
         prompt_words = set(w.lower() for w in prompt.split() if len(w) > 3)
@@ -83,13 +88,16 @@ def check_past_regrets(prompt):
             return True
     return False
 
+
 def visualize_graph():
     """Visualize and save the knowledge graph."""
     plt.figure(figsize=(10, 8))
-    pos = nx.spring_layout(graph)
-    node_colors = ['red' if graph.nodes[n].get('regret_score', 0) > 7 else 'lightblue' for n in graph.nodes]
-    labels = {n: graph.nodes[n]['prompt'][:20] + ('...' if len(graph.nodes[n]['prompt']) > 20 else '') for n in graph.nodes}
-    nx.draw(graph, pos, labels=labels, node_color=node_colors, font_size=8, node_size=500)
+    pos = nx.spring_layout(graph.graph)
+    node_colors = ['red' if graph.graph.nodes[n].get('regret_score', 0) > 7 else 'lightblue' for n in graph.graph.nodes]
+    labels = {n: graph.graph.nodes[n]['prompt'][:20] +
+              ('...' if len(graph.graph.nodes[n]['prompt']) > 20 else '')
+              for n in graph.graph.nodes}
+    nx.draw(graph.graph, pos, labels=labels, node_color=node_colors, font_size=8, node_size=500)
     plt.title("Consciousness Knowledge Graph (Red: High Regret)")
     plt.savefig('graphs/graph.png')
     console.print("Graph visualization saved as graphs/graph.png", style="green")
