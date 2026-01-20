@@ -33,7 +33,7 @@
 ## Directory Structure
 
 ```
-conciusness/
+ai-consciousness/
 ├── main.py                # CLI entrypoint
 ├── config.yaml            # Config file (model, thresholds, etc.)
 ├── requirements.txt       # Python dependencies
@@ -46,7 +46,13 @@ conciusness/
 │   └── config_module.py
 ├── api/                   # REST API server (Flask)
 │   └── api_server.py
-
+├── tests/                 # Unit and API tests
+│   ├── tests.py
+│   └── test_api.py
+├── .github/               # GitHub templates and workflows
+├── SECURITY.md            # Security policy
+├── CONTRIBUTING.md        # Contribution guidelines
+└── LICENSE                # MIT License
 ```
 
 

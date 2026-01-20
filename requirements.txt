@@ -1,8 +1,9 @@
-networkx
-requests
-python-dotenv
-matplotlib
-rich
-flask
-pyyaml
-pytest
+networkx==3.2.1
+requests==2.31.0
+python-dotenv==1.0.0
+matplotlib==3.8.2
+rich==13.7.0
+flask==3.0.0
+flask-limiter==3.5.0
+pyyaml==6.0.1
+pytest==7.4.3

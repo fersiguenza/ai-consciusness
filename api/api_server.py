@@ -1,3 +1,27 @@
+from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from modules.graph_module import KnowledgeGraph
+from modules.llm_module import LLMJudger
+from modules.emotion_module import update_emotion, update_mood
+from modules.config_module import Config
+
+app = Flask(__name__)
+
+# Rate limiting: 10 requests per minute per IP
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["10 per minute"]
+)
+
+config = Config()
+graph = KnowledgeGraph()
+llm = LLMJudger(config.ollama_url, config.model)
+regret_threshold = config.regret_threshold
+forgetting_decay = config.forgetting_decay
+mood_threshold = config.mood_threshold
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint for monitoring and readiness probes."""
@@ -9,7 +33,7 @@ def root():
     return (
         "<h2>Consciousness Proxy API</h2>"
         "<p>Welcome! The API is running.<br>"
-        "See <a href='https://github.com/your-org/conciusness'>project docs</a> for usage.</p>"
+        "See <a href='https://github.com/fersiguenza/ai-consciusness'>project docs</a> for usage.</p>"
         "<ul>"
         "<li>POST /prompt</li>"
         "<li>GET /graph</li>"
@@ -19,24 +43,9 @@ def root():
         "<li>GET /health</li>"
         "</ul>"
     ), 200, {"Content-Type": "text/html"}
-from flask import Flask, request, jsonify
-from modules.graph_module import KnowledgeGraph
-from modules.llm_module import LLMJudger
-from modules.emotion_module import update_emotion, update_mood
-from modules.config_module import Config
-
-
-
-app = Flask(__name__)
-
-config = Config()
-graph = KnowledgeGraph()
-llm = LLMJudger(config.ollama_url, config.model)
-regret_threshold = config.regret_threshold
-forgetting_decay = config.forgetting_decay
-mood_threshold = config.mood_threshold
 
 @app.route('/prompt', methods=['POST'])
+@limiter.limit("5 per minute")  # Stricter limit for prompt endpoint
 def handle_prompt():
     data = request.json
     prompt = data.get('prompt')
@@ -59,19 +68,20 @@ def handle_prompt():
 
 @app.route('/graph', methods=['GET'])
 def get_graph():
-	nodes = [{**graph.graph.nodes[n], 'id': n} for n in graph.graph.nodes]
-	edges = list(graph.graph.edges)
-	return jsonify({'nodes': nodes, 'edges': edges})
+    nodes = [{**graph.graph.nodes[n], 'id': n} for n in graph.graph.nodes]
+    edges = list(graph.graph.edges)
+    return jsonify({'nodes': nodes, 'edges': edges})
 
 @app.route('/clusters', methods=['GET'])
 def get_clusters():
-	return jsonify({'clusters': graph.analyze_clusters()})
+    return jsonify({'clusters': graph.analyze_clusters()})
 
 @app.route('/config', methods=['GET'])
 def get_config():
-	return jsonify(config.config)
+    return jsonify(config.config)
 
 @app.route('/forget', methods=['POST'])
+@limiter.limit("2 per minute")  # Limit forgetting to prevent abuse
 def forget():
     removed = graph.causal_forgetting(regret_threshold)
     return jsonify({'removed_nodes': removed})
