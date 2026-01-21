@@ -3,20 +3,26 @@
 # This configures both the CLI (main.py) and API (api/api_server.py)
 
 # LLM provider: 'ollama', 'openai', 'bedrock'
-llm_provider: "ollama"
+llm_provider: "openai"
 
 # Model name (varies by provider)
-model: "llama2"
+model: "gpt-4"
+
+# Judge provider (optional, defaults to same as llm_provider)
+judge_provider: "openai"
+
+# Judge model (optional, defaults to same as model)
+judge_model: "gpt-4"
 
 # OpenAI settings (only needed if using openai provider)
-# openai_api_key: "your-openai-api-key-here"
+openai_api_key: "your-openai-api-key-here"
 
 # AWS Bedrock settings (only needed if using bedrock provider)
 # bedrock_region: "us-east-1"
 # bedrock_model_id: "anthropic.claude-v2"
 
 # Regret threshold for forgetting (lower = more aggressive pruning)
-regret_threshold: 7
+regret_threshold: 0
 
 # How much regret decays per day (float)
 forgetting_decay: 1

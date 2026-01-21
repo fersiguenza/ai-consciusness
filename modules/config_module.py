@@ -46,8 +46,12 @@ class Config:
         return self.get('mood_threshold', 5)
 
     @property
-    def ollama_url(self) -> str:
-        return os.getenv('OLLAMA_URL') or self.get('ollama_url', 'http://localhost:11434/api/generate')
+    def judge_provider(self) -> str:
+        return self.get('judge_provider', self.llm_provider)
+
+    @property
+    def judge_model(self) -> str:
+        return self.get('judge_model', self.model)
 
     def create_llm_provider(self):
         """Create and return the appropriate LLM provider based on configuration."""
@@ -63,5 +67,19 @@ class Config:
             return OpenAIProvider(self.openai_api_key, self.model)
         elif provider_type == 'bedrock':
             return BedrockProvider(self.bedrock_region, self.bedrock_model_id)
+    def create_judge_provider(self):
+        """Create and return the judge LLM provider."""
+        from .llm_module import OllamaProvider, OpenAIProvider, BedrockProvider
+
+        provider_type = self.judge_provider.lower()
+
+        if provider_type == 'ollama':
+            return OllamaProvider(self.ollama_url, self.judge_model)
+        elif provider_type == 'openai':
+            if not self.openai_api_key:
+                raise ValueError("OpenAI API key required for judge provider")
+            return OpenAIProvider(self.openai_api_key, self.judge_model)
+        elif provider_type == 'bedrock':
+            return BedrockProvider(self.bedrock_region, self.bedrock_model_id)
         else:
-            raise ValueError(f"Unsupported LLM provider: {provider_type}")
+            raise ValueError(f"Unsupported judge provider: {provider_type}")

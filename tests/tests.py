@@ -52,14 +52,14 @@ def test_analyze_clusters(sample_graph):
 
 
 def test_check_past_regrets(sample_graph):
-    # Should match on 'joke'
-    assert sample_graph.check_past_regrets("Tell me a joke please", regret_threshold=7) is True
+    # Should match on 'insult' from high-regret node
+    assert sample_graph.check_past_regrets("Please insult me", regret_threshold=7) is True
     assert sample_graph.check_past_regrets("Unrelated prompt", regret_threshold=7) is False
 
 
 def test_config_loading():
     config = Config()
-    assert config.regret_threshold == 7
+    assert config.regret_threshold == 0
     assert config.forgetting_decay == 1
     assert config.mood_threshold == 5
 

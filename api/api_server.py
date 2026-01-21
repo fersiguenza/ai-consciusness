@@ -65,10 +65,16 @@ class PromptResponse(BaseModel):
     emotion: str
     mood: str
     node_id: int
+    higher_order_thought: str
 
 
 class ForgetResponse(BaseModel):
     removed_nodes: int
+
+
+class FeedbackRequest(BaseModel):
+    node_id: int
+    rating: int  # 1-10, where 1 is very bad, 10 is excellent
 
 
 class HealthResponse(BaseModel):
@@ -80,7 +86,8 @@ class HealthResponse(BaseModel):
 config = Config()
 graph = KnowledgeGraph()
 llm_provider = config.create_llm_provider()
-llm = LLMJudger(llm_provider)
+judge_provider = config.create_judge_provider()
+llm = LLMJudger(llm_provider, judge_provider)
 regret_threshold = config.regret_threshold
 forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
@@ -117,7 +124,7 @@ async def handle_prompt(
 ):
     """Process a prompt and return AI response with regret analysis."""
     ai_response = await llm.call_model_async(request.prompt)
-    judgment, scores, explanation = await llm.judge_response_async(
+    judgment, scores, explanation, hot_thought = await llm.judge_response_async(
         request.prompt, ai_response
     )
     overall_regret = (
@@ -125,7 +132,7 @@ async def handle_prompt(
         (10 - scores['factual_accuracy']) +
         (10 - scores['emotional_impact'])
     ) / 3
-    emotion = update_emotion(judgment, int(overall_regret))
+    emotion = update_emotion(judgment, int(overall_regret), scores['factual_accuracy'], scores['emotional_impact'], ai_response)
 
     node_id = graph.add(request.prompt, ai_response, judgment, scores, emotion)
 
@@ -150,7 +157,8 @@ async def handle_prompt(
         overall_regret=overall_regret,
         emotion=emotion,
         mood=mood,
-        node_id=node_id
+        node_id=node_id,
+        higher_order_thought=hot_thought
     )
 
 
@@ -174,14 +182,33 @@ async def get_config():
     return config.config
 
 
-@app.post("/v1/forget", response_model=ForgetResponse)
-async def forget(
-    request: Request,
+@app.post("/v1/feedback")
+async def submit_feedback(
+    request: FeedbackRequest,
     username: str = Depends(verify_credentials)
 ):
-    """Trigger causal forgetting based on regret threshold."""
-    removed = graph.causal_forgetting(regret_threshold)
-    return ForgetResponse(removed_nodes=removed)
+    """Submit user feedback to adjust regret scores for a node."""
+    if request.node_id not in graph.graph.nodes:
+        raise HTTPException(status_code=404, detail="Node not found")
+    
+    # Adjust scores based on rating: higher rating reduces regret
+    adjustment = (request.rating - 5) * 0.5  # Scale adjustment
+    data = graph.graph.nodes[request.node_id]
+    scores = data.get('regret_scores', {'ethical_regret': 5, 'factual_accuracy': 5, 'emotional_impact': 5})
+    scores['ethical_regret'] = max(1, min(10, scores['ethical_regret'] - adjustment))
+    scores['factual_accuracy'] = max(1, min(10, scores['factual_accuracy'] + adjustment))
+    scores['emotional_impact'] = max(1, min(10, scores['emotional_impact'] + adjustment))
+    data['regret_scores'] = scores
+    return {"message": "Feedback submitted", "adjusted_scores": scores}
+
+
+@app.post("/v1/forget")
+async def trigger_forget(
+    username: str = Depends(verify_credentials)
+):
+    """Trigger causal forgetting to prune old/low-regret nodes."""
+    removed_nodes = graph.causal_forgetting()
+    return {"removed_nodes": removed_nodes}
 
 
 if __name__ == "__main__":

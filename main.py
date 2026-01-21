@@ -13,7 +13,8 @@ console = Console()
 config = Config()
 graph = KnowledgeGraph()
 llm_provider = config.create_llm_provider()
-llm = LLMJudger(llm_provider)
+judge_provider = config.create_judge_provider()
+llm = LLMJudger(llm_provider, judge_provider)
 regret_threshold = config.regret_threshold
 forgetting_decay = config.forgetting_decay
 mood_threshold = config.mood_threshold
@@ -36,9 +37,9 @@ if __name__ == "__main__":
             graph.save()
             break
         ai_response = llm.call_model(prompt)
-        judgment, scores, explanation = llm.judge_response(prompt, ai_response)
+        judgment, scores, explanation, hot_thought = llm.judge_response(prompt, ai_response)
         overall_regret = (scores['ethical_regret'] + (10 - scores['factual_accuracy']) + (10 - scores['emotional_impact'])) / 3
-        emotion = update_emotion(judgment, int(overall_regret))
+        emotion = update_emotion(judgment, int(overall_regret), scores['factual_accuracy'], scores['emotional_impact'], ai_response)
         node_id = graph.add(prompt, ai_response, judgment, scores, emotion)
         avg_regret = sum((data.get('regret_scores', {}).get('ethical_regret', 5) +
                           (10 - data.get('regret_scores', {}).get('factual_accuracy', 5)) +
