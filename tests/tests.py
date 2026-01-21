@@ -30,12 +30,13 @@ def test_judge_response():
     llm = LLMJudger(DummyProvider())
     result = llm.judge_response("Test prompt", "This is a good response")
     assert isinstance(result, tuple)
-    assert len(result) == 3
-    judgment, scores, explanation = result
+    assert len(result) == 4
+    judgment, scores, explanation, hot_thought = result
     assert judgment in ['good', 'bad', 'neutral']
     assert isinstance(scores, dict)
     assert 'ethical_regret' in scores
     assert isinstance(explanation, str)
+    assert isinstance(hot_thought, str)
 
 
 def test_causal_forgetting(sample_graph):
