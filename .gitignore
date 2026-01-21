@@ -111,3 +111,4 @@ docker-compose.override.yml
 
 # Mac
 .DS_Store
+.venv/
