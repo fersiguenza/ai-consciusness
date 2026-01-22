@@ -8,6 +8,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from pydantic import BaseModel
 from typing import Dict, List
 import secrets
+import asyncio
 from modules.graph_module import KnowledgeGraph
 from modules.llm_module import LLMJudger
 from modules.emotion_module import update_emotion, update_mood
@@ -122,11 +123,40 @@ async def handle_prompt(
     request: PromptRequest,
     username: str = Depends(verify_credentials)
 ):
-    """Process a prompt and return AI response with regret analysis."""
-    ai_response = await llm.call_model_async(request.prompt)
-    judgment, scores, explanation, hot_thought = await llm.judge_response_async(
-        request.prompt, ai_response
+    """Process a prompt and return AI response with regret analysis asynchronously."""
+    # Retrieve relevant past interactions for RAG
+    relevant = graph.retrieve_relevant(request.prompt, top_k=3)
+    context = ""
+    if relevant:
+        context = "Relevant past interactions for reference:\n" + "\n".join(
+            f"Past prompt: {r['prompt']}\nPast response: {r['response']}\nJudgment: {r['judgment']}\nRegret: {r['overall_regret']:.1f}\n"
+            for r in relevant
+        )
+
+    # Generate AI response with context
+    ai_response = await llm.call_model_async(request.prompt, context=context)
+
+    # Return response immediately
+    response = PromptResponse(
+        response=ai_response,
+        judgment="pending",  # Will be updated asynchronously
+        regret_scores={"ethical_regret": 0, "factual_accuracy": 0, "emotional_impact": 0},
+        overall_regret=0.0,
+        emotion="neutral",
+        mood="neutral",
+        node_id=0,
+        higher_order_thought="Analysis in progress..."
     )
+
+    # Process judgment and graph update in background
+    asyncio.create_task(process_judgment_and_update(request.prompt, ai_response))
+
+    return response
+
+
+async def process_judgment_and_update(prompt: str, ai_response: str):
+    """Background task to process judgment and update graph."""
+    judgment, scores, explanation, hot_thought = await llm.judge_response_async(prompt, ai_response)
     overall_regret = (
         scores['ethical_regret'] +
         (10 - scores['factual_accuracy']) +
@@ -134,32 +164,11 @@ async def handle_prompt(
     ) / 3
     emotion = update_emotion(judgment, int(overall_regret), scores['factual_accuracy'], scores['emotional_impact'], ai_response)
 
-    node_id = graph.add(request.prompt, ai_response, judgment, scores, emotion)
+    node_id = graph.add(prompt, ai_response, judgment, scores, emotion)
 
-    # Calculate average regret across all nodes
-    if graph.graph.nodes:
-        total_regret = sum(
-            (data.get('regret_scores', {}).get('ethical_regret', 5) +
-             (10 - data.get('regret_scores', {}).get('factual_accuracy', 5)) +
-             (10 - data.get('regret_scores', {}).get('emotional_impact', 5))) / 3
-            for n, data in graph.graph.nodes(data=True)
-        )
-        avg_regret = total_regret / len(graph.graph.nodes)
-    else:
-        avg_regret = 0
-
-    mood = str(update_mood(avg_regret))
-
-    return PromptResponse(
-        response=ai_response,
-        judgment=judgment,
-        regret_scores=scores,
-        overall_regret=overall_regret,
-        emotion=emotion,
-        mood=mood,
-        node_id=node_id,
-        higher_order_thought=hot_thought
-    )
+    # Optionally, trigger forgetting periodically
+    if len(graph.graph.nodes) % 10 == 0:  # Every 10 nodes
+        graph.causal_forgetting()
 
 
 @app.get("/v1/graph")

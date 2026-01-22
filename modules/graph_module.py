@@ -6,7 +6,7 @@ from networkx.algorithms.centrality import betweenness_centrality
 from datetime import datetime
 import logging
 
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 
 
 logger = logging.getLogger(__name__)
@@ -69,8 +69,8 @@ class KnowledgeGraph:
         num_clusters = len(communities)
         return f"Found {num_clusters} clusters. Sizes: {[len(c) for c in communities]}"
 
-    def causal_forgetting(self, regret_threshold: int = 3, age_days_threshold: int = 7) -> int:
-        """Advanced causal forgetting: Prune low-regret, low-centrality nodes considering graph structure."""
+    def causal_forgetting(self, regret_threshold: int = 7, age_days_threshold: int = 7) -> int:
+        """Advanced causal forgetting: Prune high-regret, low-centrality nodes considering graph structure to retain good examples."""
         if len(self.graph.nodes) < 2:
             return 0  # Not enough nodes for meaningful forgetting
 
@@ -89,15 +89,52 @@ class KnowledgeGraph:
                               (10 - regret_scores['emotional_impact'])) / 3
             importance = centrality.get(node, 0)
 
-            # Prune if: low overall regret AND (old OR low importance OR isolated)
+            # Prune if: high overall regret AND (old OR low importance OR isolated) - retain good examples
             connectivity = len(list(self.graph.neighbors(node)))
-            if overall_regret < regret_threshold and (age_days > age_days_threshold or importance < 0.01 or connectivity < 1):
+            if overall_regret > regret_threshold and (age_days > age_days_threshold or importance < 0.01 or connectivity < 1):
                 to_prune.append(node)
 
         for node in to_prune:
             self.graph.remove_node(node)
-        logger.info(f"Pruned {len(to_prune)} nodes via causal forgetting")
-        return len(to_prune)
+    def retrieve_relevant(self, prompt: str, top_k: int = 3) -> List[Dict]:
+        """Retrieve top-k relevant past interactions based on prompt similarity and high regret for learning."""
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+        import numpy as np
+
+        if len(self.graph.nodes) < 1:
+            return []
+
+        prompts = [self.graph.nodes[n]['prompt'] for n in self.graph.nodes]
+        prompts.append(prompt)
+        vectorizer = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = vectorizer.fit_transform(prompts)
+        similarities = cosine_similarity(tfidf_matrix[-1:], tfidf_matrix[:-1])[0]
+
+        # Prioritize high-regret nodes for learning from mistakes
+        regrets = []
+        for i, n in enumerate(self.graph.nodes):
+            scores = self.graph.nodes[n].get('regret_scores', {'ethical_regret': 5, 'factual_accuracy': 5, 'emotional_impact': 5})
+            overall_regret = (scores['ethical_regret'] + (10 - scores['factual_accuracy']) + (10 - scores['emotional_impact'])) / 3
+            regrets.append(overall_regret)
+
+        # Combine similarity and regret (higher regret gets boost)
+        combined_scores = similarities + np.array(regrets) * 0.5  # Boost high-regret by 0.5
+
+        top_indices = np.argsort(combined_scores)[-top_k:][::-1]
+        relevant = []
+        for idx in top_indices:
+            n = list(self.graph.nodes)[idx]
+            relevant.append({
+                'node_id': n,
+                'prompt': self.graph.nodes[n]['prompt'],
+                'response': self.graph.nodes[n]['response'],
+                'judgment': self.graph.nodes[n]['judgment'],
+                'regret_scores': self.graph.nodes[n]['regret_scores'],
+                'similarity': similarities[idx],
+                'overall_regret': regrets[idx]
+            })
+        return relevant
 
     def check_past_regrets(self, prompt: str, regret_threshold: int = 7) -> Any:
         high_regret_nodes = [n for n in self.graph.nodes

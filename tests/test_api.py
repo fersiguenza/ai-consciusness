@@ -36,7 +36,7 @@ def test_prompt_endpoint(client, monkeypatch):
     # Patch LLM and graph to avoid real LLM calls
 
     class DummyLLM:
-        async def call_model_async(self, prompt, max_tokens=100):
+        async def call_model_async(self, prompt, max_tokens=100, context=""):
             return "Test response"
 
         async def judge_response_async(self, prompt, response):

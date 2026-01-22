@@ -36,7 +36,14 @@ if __name__ == "__main__":
         if prompt.lower() == 'exit':
             graph.save()
             break
-        ai_response = llm.call_model(prompt)
+        relevant = graph.retrieve_relevant(prompt, top_k=3)
+        context = ""
+        if relevant:
+            context = "Relevant past interactions:\n" + "\n".join(
+                f"Past: {r['prompt']} -> {r['response']} (Regret: {r['overall_regret']:.1f})"
+                for r in relevant
+            )
+        ai_response = llm.call_model(prompt, context=context)
         judgment, scores, explanation, hot_thought = llm.judge_response(prompt, ai_response)
         overall_regret = (scores['ethical_regret'] + (10 - scores['factual_accuracy']) + (10 - scores['emotional_impact'])) / 3
         emotion = update_emotion(judgment, int(overall_regret), scores['factual_accuracy'], scores['emotional_impact'], ai_response)

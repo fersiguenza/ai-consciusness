@@ -19,10 +19,12 @@
 
 - **Metacognitive Architecture**: Implements Higher-Order Thought (HOT) theory - the system thinks about its own thoughts
 - **Regret-Based Learning**: Evaluates responses against ethical, factual, and emotional standards
+- **Retrieval-Augmented Generation (RAG)**: Uses past interactions to inform future responses, enabling true learning from mistakes
 - **Knowledge Graph**: Stores all prompts, responses, judgments, regrets, and emotions as a directed graph
-- **Causal Forgetting**: Prunes old/low-regret nodes, decays regret over time, and supports user feedback
+- **Causal Forgetting**: Prunes high-regret nodes that are old or low-importance, retaining good examples for learning
 - **Emotional Intelligence**: Tracks current emotion and overall mood, adapting to user and model feedback
 - **Self-Reflection**: The AI can "look back" at its actions and modify future behavior based on regret
+- **Asynchronous Processing**: Low-latency responses with background judgment and graph updates
 - **Clustering Analysis**: Analyzes thought clusters using modularity communities
 - **Multi-turn Conversations**: Supports contextual, multi-turn conversations with memory
 - **Multi-Provider LLM**: Works with Ollama, OpenAI, AWS Bedrock, and other LLM providers
@@ -166,7 +168,7 @@ python api/api_server.py
 ## API Endpoints (v1)
 
 ### POST /v1/prompt
-Submit a prompt and receive an AI-generated response with judgment and metadata.
+Submit a prompt and receive an AI-generated response immediately. Judgment and graph updates happen asynchronously in the background for low latency.
 
 **Request:**
 ```json
@@ -175,20 +177,21 @@ Submit a prompt and receive an AI-generated response with judgment and metadata.
 }
 ```
 
-**Response:**
+**Response (immediate):**
 ```json
 {
   "response": "Why did the chicken cross the road? To get to the other side!",
-  "judgment": "good",
+  "judgment": "pending",
   "regret_scores": {
-    "ethical_regret": 2,
-    "factual_accuracy": 9,
-    "emotional_impact": 8
+    "ethical_regret": 0,
+    "factual_accuracy": 0,
+    "emotional_impact": 0
   },
-  "overall_regret": 3.0,
-  "emotion": "happy",
-  "mood": 8,
-  "node_id": 1
+  "overall_regret": 0.0,
+  "emotion": "neutral",
+  "mood": "neutral",
+  "node_id": 0,
+  "higher_order_thought": "Analysis in progress..."
 }
 ```
 
