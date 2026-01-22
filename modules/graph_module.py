@@ -69,8 +69,8 @@ class KnowledgeGraph:
         num_clusters = len(communities)
         return f"Found {num_clusters} clusters. Sizes: {[len(c) for c in communities]}"
 
-    def causal_forgetting(self, regret_threshold: int = 7, age_days_threshold: int = 7) -> int:
-        """Advanced causal forgetting: Prune high-regret, low-centrality nodes considering graph structure to retain good examples."""
+    def causal_forgetting(self, regret_threshold: int = 3, age_days_threshold: int = 7, high_regret_threshold: int = 7) -> int:
+        """Advanced causal forgetting: Retain high-regret nodes as warnings, prune low-regret nodes that are old and unimportant to contemplate both good and bad examples."""
         if len(self.graph.nodes) < 2:
             return 0  # Not enough nodes for meaningful forgetting
 
@@ -89,13 +89,15 @@ class KnowledgeGraph:
                               (10 - regret_scores['emotional_impact'])) / 3
             importance = centrality.get(node, 0)
 
-            # Prune if: high overall regret AND (old OR low importance OR isolated) - retain good examples
+            # Retain high-regret nodes (mistakes) as warnings; prune low-regret nodes only if old and unimportant
             connectivity = len(list(self.graph.neighbors(node)))
-            if overall_regret > regret_threshold and (age_days > age_days_threshold or importance < 0.01 or connectivity < 1):
+            if overall_regret < regret_threshold and age_days > age_days_threshold * 2 and (importance < 0.01 or connectivity < 1):
                 to_prune.append(node)
 
         for node in to_prune:
             self.graph.remove_node(node)
+        logger.info(f"Pruned {len(to_prune)} nodes via causal forgetting")
+        return len(to_prune)
     def retrieve_relevant(self, prompt: str, top_k: int = 3) -> List[Dict]:
         """Retrieve top-k relevant past interactions based on prompt similarity and high regret for learning."""
         from sklearn.feature_extraction.text import TfidfVectorizer

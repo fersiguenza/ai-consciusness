@@ -21,7 +21,7 @@
 - **Regret-Based Learning**: Evaluates responses against ethical, factual, and emotional standards
 - **Retrieval-Augmented Generation (RAG)**: Uses past interactions to inform future responses, enabling true learning from mistakes
 - **Knowledge Graph**: Stores all prompts, responses, judgments, regrets, and emotions as a directed graph
-- **Causal Forgetting**: Prunes high-regret nodes that are old or low-importance, retaining good examples for learning
+- **Causal Forgetting**: Retains high-regret nodes as warnings, prunes low-regret nodes that are old and unimportant to contemplate both good and bad examples
 - **Emotional Intelligence**: Tracks current emotion and overall mood, adapting to user and model feedback
 - **Self-Reflection**: The AI can "look back" at its actions and modify future behavior based on regret
 - **Asynchronous Processing**: Low-latency responses with background judgment and graph updates
